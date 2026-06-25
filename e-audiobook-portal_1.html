@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>e-AUDIO-BOOK Portal · 인문고전 100선</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Marcellus&family=Noto+Sans+KR:wght@300;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f; --bg2:#12121c; --gold:#d4af37; --gold-soft:#e8d49a;
+  --ink:#f5f3ea; --ink-dim:#9a978c; --line:rgba(212,175,55,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)}
+body{
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(212,175,55,.10), transparent 60%),
+    radial-gradient(800px 500px at 100% 110%, rgba(120,80,200,.10), transparent 60%),
+    var(--bg);
+}
+.grain{position:fixed;inset:0;pointer-events:none;opacity:.04;z-index:99;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ===== Header ===== */
+header{position:fixed;top:0;left:0;right:0;z-index:30;padding:18px 22px 14px;
+  background:linear-gradient(180deg,rgba(10,10,15,.95),rgba(10,10,15,0));}
+.brand{display:flex;align-items:center;gap:11px}
+.brand .mk{width:34px;height:34px;border:1.5px solid var(--gold);border-radius:50%;
+  display:grid;place-items:center;font-family:'Marcellus',serif;color:var(--gold);font-size:18px;
+  box-shadow:0 0 18px rgba(212,175,55,.25)}
+.brand h1{font-family:'Marcellus',serif;font-size:18px;letter-spacing:.14em;font-weight:400;color:var(--gold-soft)}
+.brand .sub{font-size:10px;letter-spacing:.32em;color:var(--ink-dim);margin-top:1px}
+
+/* ===== Carousel stage ===== */
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#track{position:relative;width:100%;height:100%;perspective:1400px}
+.card{position:absolute;top:50%;left:50%;width:248px;height:368px;border-radius:20px;
+  transform-style:preserve-3d;cursor:pointer;
+  transition:transform .55s cubic-bezier(.22,1,.36,1),opacity .55s,filter .55s;
+  will-change:transform,opacity;overflow:hidden;
+  box-shadow:0 30px 60px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05) inset;}
+.card .skin{position:absolute;inset:0;padding:24px 22px;display:flex;flex-direction:column;
+  background:linear-gradient(150deg,var(--g1),var(--g2));}
+.card .skin::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(120% 80% at 80% 0%,rgba(255,255,255,.22),transparent 50%),
+             linear-gradient(180deg,transparent 40%,rgba(0,0,0,.55));}
+.card .no{font-family:'Marcellus',serif;font-size:13px;letter-spacing:.2em;color:rgba(255,255,255,.85);
+  z-index:2;display:flex;align-items:center;gap:8px}
+.card .no::before{content:"";width:26px;height:1px;background:rgba(255,255,255,.6)}
+.card .ttl{font-family:'Gowun Batang',serif;font-weight:700;font-size:25px;line-height:1.28;
+  margin-top:auto;z-index:2;text-shadow:0 2px 14px rgba(0,0,0,.5);word-break:keep-all}
+.card .auth{font-size:12.5px;letter-spacing:.05em;color:rgba(255,255,255,.82);margin-top:9px;z-index:2}
+.card .copy{font-size:12px;line-height:1.5;color:rgba(255,255,255,.92);margin-top:13px;z-index:2;
+  padding-top:13px;border-top:1px solid rgba(255,255,255,.25);word-break:keep-all;font-weight:300}
+.card .lang-dots{position:absolute;top:22px;right:20px;z-index:3;display:flex;gap:5px}
+.card .lang-dots span{font-size:8.5px;padding:3px 6px;border-radius:20px;letter-spacing:.08em;
+  background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.3);color:#fff;font-weight:500}
+
+/* ===== bottom controls ===== */
+#hud{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:16px 0 26px;
+  background:linear-gradient(0deg,rgba(10,10,15,.96),rgba(10,10,15,0));
+  display:flex;flex-direction:column;align-items:center;gap:14px}
+#counter{font-family:'Marcellus',serif;letter-spacing:.18em;color:var(--gold-soft);font-size:14px}
+#counter b{color:var(--gold);font-size:18px}
+.nav{display:flex;align-items:center;gap:20px}
+.nav button{width:50px;height:50px;border-radius:50%;border:1px solid var(--line);
+  background:rgba(255,255,255,.03);color:var(--gold);font-size:20px;cursor:pointer;
+  display:grid;place-items:center;transition:.25s;backdrop-filter:blur(8px)}
+.nav button:active{transform:scale(.9);background:rgba(212,175,55,.15)}
+.play-cta{padding:14px 30px;border-radius:40px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),#b8902a);color:#1a1606;
+  font-family:'Noto Sans KR';font-weight:700;font-size:15px;letter-spacing:.04em;
+  box-shadow:0 10px 30px rgba(212,175,55,.4);transition:.25s}
+.play-cta:active{transform:scale(.95)}
+.hint{font-size:11px;color:var(--ink-dim);letter-spacing:.05em}
+
+/* ===== Search chip ===== */
+#searchBtn{position:fixed;top:20px;right:20px;z-index:31;width:40px;height:40px;border-radius:50%;
+  border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--gold);font-size:17px;
+  cursor:pointer;backdrop-filter:blur(8px)}
+#searchPanel{position:fixed;inset:0;z-index:60;background:rgba(8,8,13,.97);backdrop-filter:blur(10px);
+  display:none;flex-direction:column;padding:70px 18px 18px}
+#searchPanel.on{display:flex}
+#searchInput{width:100%;padding:15px 18px;border-radius:14px;border:1px solid var(--line);
+  background:rgba(255,255,255,.05);color:var(--ink);font-size:16px;font-family:'Noto Sans KR';outline:none}
+#searchInput::placeholder{color:var(--ink-dim)}
+#searchList{flex:1;overflow-y:auto;margin-top:14px;display:flex;flex-direction:column;gap:2px;-webkit-overflow-scrolling:touch}
+.sItem{padding:14px 16px;border-radius:12px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:.15s}
+.sItem:active{background:rgba(212,175,55,.12)}
+.sItem .sn{font-family:'Marcellus',serif;color:var(--gold);font-size:14px;min-width:34px}
+.sItem .si-t{font-family:'Gowun Batang',serif;font-size:15px;color:var(--ink)}
+.sItem .si-a{font-size:11.5px;color:var(--ink-dim);margin-top:2px}
+.sClose{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
+  background:transparent;color:var(--gold);font-size:18px;cursor:pointer}
+.sTitle{position:absolute;top:24px;left:22px;font-family:'Marcellus',serif;letter-spacing:.12em;color:var(--gold-soft);font-size:15px}
+
+/* ===== Player Sheet ===== */
+#player{position:fixed;inset:0;z-index:70;display:none;align-items:flex-end;justify-content:center}
+#player.on{display:flex}
+#player .scrim{position:absolute;inset:0;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);animation:fade .3s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{position:relative;width:100%;max-width:460px;border-radius:28px 28px 0 0;padding:14px 24px 34px;
+  background:linear-gradient(180deg,var(--bg2),#0b0b13);border-top:1px solid var(--line);
+  box-shadow:0 -20px 60px rgba(0,0,0,.6);animation:rise .42s cubic-bezier(.22,1,.36,1)}
+@keyframes rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.grab{width:42px;height:5px;border-radius:5px;background:rgba(255,255,255,.2);margin:0 auto 18px}
+.pHead{display:flex;gap:16px;align-items:center}
+.pCover{width:74px;height:104px;border-radius:12px;flex-shrink:0;position:relative;overflow:hidden;
+  box-shadow:0 12px 28px rgba(0,0,0,.5)}
+.pCover .pc-no{position:absolute;top:8px;left:9px;font-family:'Marcellus',serif;font-size:11px;color:rgba(255,255,255,.9);z-index:2}
+.pInfo{flex:1;min-width:0}
+.pInfo .pno{font-family:'Marcellus',serif;letter-spacing:.18em;font-size:11px;color:var(--gold)}
+.pInfo .pt{font-family:'Gowun Batang',serif;font-weight:700;font-size:21px;line-height:1.3;margin-top:3px;word-break:keep-all}
+.pInfo .pa{font-size:12.5px;color:var(--ink-dim);margin-top:5px}
+.pCopy{font-size:13px;line-height:1.6;color:var(--gold-soft);font-family:'Gowun Batang',serif;
+  margin:18px 0 6px;padding-left:13px;border-left:2px solid var(--gold);font-style:italic;word-break:keep-all}
+
+.langRow{display:flex;gap:9px;margin:18px 0 6px}
+.langBtn{flex:1;padding:13px 6px;border-radius:14px;border:1px solid var(--line);cursor:pointer;
+  background:rgba(255,255,255,.03);color:var(--ink);text-align:center;transition:.22s;position:relative}
+.langBtn .lg-f{font-size:21px;line-height:1}
+.langBtn .lg-n{font-size:11px;margin-top:5px;letter-spacing:.04em;color:var(--ink-dim)}
+.langBtn.sel{border-color:var(--gold);background:linear-gradient(135deg,rgba(212,175,55,.22),rgba(212,175,55,.06))}
+.langBtn.sel .lg-n{color:var(--gold-soft)}
+.langBtn.off{opacity:.32;cursor:not-allowed}
+.langBtn.off::after{content:"준비중";position:absolute;top:5px;right:7px;font-size:7.5px;color:var(--ink-dim);letter-spacing:.05em}
+
+audio{width:100%;margin-top:20px;border-radius:30px;display:none}
+audio.show{display:block}
+.driveFrame{width:100%;height:74px;border:none;border-radius:16px;margin-top:18px;
+  background:rgba(255,255,255,.04);display:none}
+.driveFrame.show{display:block}
+.playState{margin-top:16px;text-align:center;font-size:12px;color:var(--ink-dim);letter-spacing:.04em;
+  min-height:16px;transition:.3s}
+.playState.loading{color:var(--gold-soft)}
+.pClose{position:absolute;top:16px;right:18px;width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--line);background:transparent;color:var(--ink-dim);font-size:17px;cursor:pointer;z-index:5}
+.loadMsg{font-size:11.5px;color:var(--ink-dim);text-align:center;margin-top:14px;letter-spacing:.03em;line-height:1.6}
+.loadMsg a{color:var(--gold)}
+
+@media(max-height:680px){.card{width:224px;height:330px}.card .ttl{font-size:22px}}
+@media(max-width:360px){.card{width:218px;height:330px}}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header>
+  <div class="brand">
+    <div class="mk">e</div>
+    <div>
+      <h1>AUDIO&nbsp;BOOK&nbsp;PORTAL</h1>
+      <div class="sub">서양 인문고전 100선 · 듣는 도서관</div>
+    </div>
+  </div>
+</header>
+
+<button id="searchBtn">⌕</button>
+
+<div id="stage"><div id="track"></div></div>
+
+<div id="hud">
+  <div id="counter"></div>
+  <div class="nav">
+    <button id="prev">‹</button>
+    <button class="play-cta" id="open">▶  듣기</button>
+    <button id="next">›</button>
+  </div>
+  <div class="hint">카드를 좌우로 밀거나 탭하여 책을 고르세요</div>
+</div>
+
+<!-- Search -->
+<div id="searchPanel">
+  <div class="sTitle">전체 목록</div>
+  <button class="sClose" id="sClose">✕</button>
+  <input id="searchInput" placeholder="책 제목 · 저자 검색…" autocomplete="off">
+  <div id="searchList"></div>
+</div>
+
+<!-- Player -->
+<div id="player">
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <button class="pClose" id="pClose">✕</button>
+    <div class="pHead">
+      <div class="pCover" id="pCover"><span class="pc-no" id="pcNo"></span></div>
+      <div class="pInfo">
+        <div class="pno" id="pNo"></div>
+        <div class="pt" id="pTitle"></div>
+        <div class="pa" id="pAuthor"></div>
+      </div>
+    </div>
+    <div class="pCopy" id="pCopy"></div>
+    <div class="langRow" id="langRow"></div>
+    <audio id="audio" controls preload="metadata"></audio>
+    <iframe id="driveFrame" class="driveFrame" allow="autoplay"></iframe>
+    <div class="playState" id="playState"></div>
+    <div class="loadMsg" id="loadMsg"></div>
+  </div>
+</div>
+
+<script>
+const BOOKS=[{"n": 1, "t": "미국 독립 선언서", "a": "1", "c": "모든 인간은 평등하게 태어났다", "k": "1V73zwOEC-8bwRKzcqOjlyT_KHUtZC-2P", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 2, "t": "소크라테스의 변명, 크리톤", "a": "플라톤", "c": "성찰하지 않는 삶은 살 가치가 없다", "k": "1u7bUVurUzN2ZStFaVnAUBEZNHvi0TftJ", "e": null, "g": ["#ec4899", "#f43f5e"]}, {"n": 3, "t": "안티고네", "a": "소포클레스", "c": "양심과 국법이 충돌할 때", "k": "1GZHmBXhio-i36OK0rjJV70ey_lFchH9u", "e": null, "g": ["#f59e0b", "#ef4444"]}, {"n": 4, "t": "정치학", "a": "아리스토텔레스", "c": "인간은 정치적 동물이다", "k": "1jCwd_Pz3fc-QeNgga-oHVnqpE2eRCakV", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 5, "t": "영웅전", "a": "플루타르크", "c": "위인들의 삶에서 배우는 교훈", "k": "18KoDYIOBwGB7SPGbZvc2OQGOKoIhqBLY", "e": null, "g": ["#3b82f6", "#6366f1"]}, {"n": 6, "t": "신약의 마태복음", "a": "1", "c": "산상수훈, 마음이 가난한 자는 복이 있나니", "k": "1ZpqBmMny7oZYM39eHyfJkm1-emZUQfu1", "e": null, "g": ["#8b5cf6", "#d946ef"]}, {"n": 7, "t": "인생론 발췌", "a": "에픽테투스", "c": "내가 통제할 수 있는 것에 집중하라", "k": "1ErI8jZY42x2paeMgGmfsSp0gAF6pmj2m", "e": null, "g": ["#0ea5e9", "#06b6d4"]}, {"n": 8, "t": "군주론", "a": "마키아벨리", "c": "사랑받기보다 두려움의 대상이 되라", "k": "1UvxT3NTP52nsK78xT4RbgsbC0dhMre76", "e": null, "g": ["#f97316", "#f59e0b"]}, {"n": 9, "t": "멕베드", "a": "셰익스피어", "c": "헛된 야망이 부른 파멸", "k": "1ywmQHWAcfHZjqvgaF2DTkVTFumY65GX3", "e": null, "g": ["#84cc16", "#22c55e"]}, {"n": 10, "t": "출판의 자유", "a": "밀턴", "c": "사상의 자유시장을 옹호하다", "k": "1a9ijHvn5EYaiztZ_4Af_VXx89SH6ZBmZ", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 11, "t": "국부론", "a": "아담 스미스", "c": "보이지 않는 손이 시장을 움직인다", "k": "1TJ03m5YBFgjcguVJWk5dDn1ahAwSCE5r", "e": null, "g": ["#ec4899", "#f43f5e"]}, {"n": 12, "t": "미합중국 헌법", "a": "페더럴리스트", "c": "연방 공화국의 설계도", "k": "1333uqxBgm1iZgXR_AMzPIlMaJ0mqX6b9", "e": null, "g": ["#f59e0b", "#ef4444"]}, {"n": 13, "t": "미국의 민주주의", "a": "토크빌", "c": "민주주의의 빛과 그림자", "k": "1AeiIUFFCO_lCm_JrLrOUweIaK2RFH9hs", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 14, "t": "공산당 선언", "a": "마르크스, 엥겔스", "c": "만국의 노동자여 단결하라", "k": "1ZTciQSJE2rP1c1bM9HQVntYb1bM8VhGi", "e": null, "g": ["#3b82f6", "#6366f1"]}, {"n": 15, "t": "시민의 반항, 월든", "a": "도로우", "c": "불의한 국가에 복종하지 않을 권리", "k": "1SNhRO_V31nsOEoowrpTFoBtD8egiSOVM", "e": null, "g": ["#8b5cf6", "#d946ef"]}, {"n": 16, "t": "이반 일리치의 죽음", "a": "톨스토이", "c": "죽음 앞에서 마주한 삶의 의미", "k": "1BYi_hnhXGocA-4CQ5mQwmxzXjrqVppYx", "e": null, "g": ["#0ea5e9", "#06b6d4"]}, {"n": 17, "t": "구약의 일부", "a": "에크레지아 스티즈", "c": "지혜문학의 정수", "k": "1LTg5tNoVSuLKDJdak_RssoctiDYqG04O", "e": null, "g": ["#f97316", "#f59e0b"]}, {"n": 18, "t": "오딧세이", "a": "호메로스", "c": "고향으로의 위대한 귀환", "k": "1ENrghf_qGWwlotO5OAi-kHElXl6rr-3e", "e": null, "g": ["#84cc16", "#22c55e"]}, {"n": 19, "t": "오이디푸스 왕, 콜로누이의 오이디푸스", "a": "소포클레스", "c": "피할 수 없는 운명의 비극", "k": "1dBj7DyLuZsHohDG4KlSfRMBGix_R7ftj", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 20, "t": "메논", "a": "플라톤", "c": "덕은 가르칠 수 있는가", "k": "1Lf1NufzO4R9dLSkJfvWtOXrcHEkVWDcI", "e": null, "g": ["#ec4899", "#f43f5e"]}, {"n": 21, "t": "니코마코스 윤리학 발췌", "a": "아리스토텔레스", "c": "중용에서 행복을 찾다", "k": "1QH61t-_AE0glO4u_e3CfK526zWwvk6Vl", "e": null, "g": ["#f59e0b", "#ef4444"]}, {"n": 22, "t": "우주론", "a": "루크레티우스", "c": "만물은 원자로 이루어졌다", "k": "1GdCdtrFFDfeHlMusksfUl_wMAZcxoxVL", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 23, "t": "고백록 제1-8장", "a": "아우구스티누스", "c": "고백을 통한 영혼의 회심", "k": "1Gs6sZVqugdhgCLerArpOxrJRNIjMu2cN", "e": null, "g": ["#3b82f6", "#6366f1"]}, {"n": 24, "t": "햄릿", "a": "셰익스피어", "c": "죽느냐 사느냐 그것이 문제로다", "k": "1iZrj7hg8iNBxoub-y84IQuj0j0Vtyi7l", "e": null, "g": ["#8b5cf6", "#d946ef"]}, {"n": 25, "t": "방법서설", "a": "데카르트", "c": "나는 생각한다 고로 존재한다", "k": "1xBpAEhZ0jPgFJ9qoGehiaDpKYLaL4luF", "e": null, "g": ["#0ea5e9", "#06b6d4"]}, {"n": 26, "t": "리바이어던 발췌", "a": "홉스", "c": "만인의 만인에 대한 투쟁", "k": "1NSav_6yN_pIh0zpaELK8TcX4BywxE_ZR", "e": null, "g": ["#f97316", "#f59e0b"]}, {"n": 27, "t": "팡세 발췌", "a": "파스칼", "c": "인간은 생각하는 갈대다", "k": "1olVx8E-6WReCTViNnCS3frqy3hV7sGBE", "e": null, "g": ["#84cc16", "#22c55e"]}, {"n": 28, "t": "걸리버 여행기", "a": "스위프트", "c": "풍자로 비춰본 인간 사회", "k": "15ZGK7GrbQPCS_HD1Aom0-lkasuH_tocK", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 29, "t": "인간 불평등 기원론", "a": "루소", "c": "문명이 만든 불평등의 기원", "k": "1zhaIxurqjJBrVmUpOLTFxXNx_F1UfS_h", "e": null, "g": ["#ec4899", "#f43f5e"]}, {"n": 30, "t": "영원한 평화를 위하여", "a": "칸트", "c": "영구 평화를 위한 철학적 기획", "k": "1K5TBBFYMaMmr-PvXpT6KoC0ijiYQZeC9", "e": null, "g": ["#f59e0b", "#ef4444"]}, {"n": 31, "t": "자유론", "a": "J.S.밀", "c": "개인의 자유는 어디까지인가", "k": "12D6eUMPVua6AheWm0fUFK_2TBCCqXp0I", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 32, "t": "허클베리 핀의 모험", "a": "트웨인", "c": "자유를 향한 강물 위의 여정", "k": "1Sduq_vob0NTQkKRNBeimobzX_AGiFA8v", "e": null, "g": ["#3b82f6", "#6366f1"]}, {"n": 33, "t": "구약의 욥기", "a": "", "c": "고난 속에서 신을 묻다", "k": "1wCGdGRfZBalqhW626A2hV1Z743vnEd-o", "e": "17S8xgcBOOuKnB1kJr2BuyxCeMVocG9Uj", "g": ["#8b5cf6", "#d946ef"]}, {"n": 34, "t": "오레스티아 3부작", "a": "아이스킬로스", "c": "복수의 사슬을 끊는 정의", "k": "1meUlfZ79KFhgfV4Jhu1KAxLWDTELQJ_i", "e": null, "g": ["#0ea5e9", "#06b6d4"]}, {"n": 35, "t": "펠로폰네소스 전쟁사", "a": "투키디데스", "c": "권력과 전쟁의 냉혹한 기록", "k": "1aL-vxbusLTt11JKROK_PaTzXCh81n9vM", "e": "1qfYvOK3bnGJl39NoGPXsGdyQ50g0bPkP", "g": ["#f97316", "#f59e0b"]}, {"n": 36, "t": "향연", "a": "플라톤", "c": "사랑이란 무엇인가", "k": "1cJdFSA_MiVZ9qDIjm345xTGbfPWwKo24", "e": null, "g": ["#84cc16", "#22c55e"]}, {"n": 37, "t": "정치학 발췌", "a": "아리스토텔레스", "c": "이상국가의 정치 질서", "k": "1IfGUUCsAXkZ-zGvbrN_RF1i8sizln_rE", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 38, "t": "신학대전 중 법률론 발췌", "a": "토마스 아퀴나스", "c": "영원법과 자연법의 체계", "k": "1gJPdVEiUfe5KJFX2lVFt4eqn53aSlzW4", "e": null, "g": ["#ec4899", "#f43f5e"]}, {"n": 39, "t": "가르강튀아와 팡타그뤼엘 제1부", "a": "라블레", "c": "웃음으로 풍자한 거인 이야기", "k": "1Q2wgQ4Ky40R0hkD1vwsUP2cpgqJiT0X3", "e": "11Y5iaUrRW-_f0-lOmFY6DCLjHP1gOR7U", "g": ["#f59e0b", "#ef4444"]}, {"n": 40, "t": "기독교 강요", "a": "캘빈", "c": "개혁신학의 토대를 세우다", "k": "1Z2YpaViK_KUUXRO41QianLlVm17-e4kJ", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 41, "t": "리어왕", "a": "셰익스피어", "c": "권력과 광기, 그리고 진실한 사랑", "k": "1JWuUjBpQN05EMQdBr4Gy5RxVtCKcN0Hm", "e": null, "g": ["#3b82f6", "#6366f1"]}, {"n": 42, "t": "대혁신", "a": "베이컨", "c": "학문의 위대한 재건", "k": "1pKWH6qRsTpAlBTVpAPoSrADIsOqpDVHK", "e": null, "g": ["#8b5cf6", "#d946ef"]}, {"n": 43, "t": "시민정부론", "a": "로크", "c": "정부 권력은 국민에게서 나온다", "k": "1yaimYRZSlI1X9BtZHvLofPd3pOcMnpB4", "e": null, "g": ["#0ea5e9", "#06b6d4"]}, {"n": 44, "t": "캉디드", "a": "볼테르", "c": "이 최선의 세계에서", "k": "1h3CtED0un1T0BlsiJrt50YufAyVkcoYE", "e": null, "g": ["#f97316", "#f59e0b"]}, {"n": 45, "t": "사회계약설", "a": "루소", "c": "일반의지와 사회계약", "k": "1Pzueeca4cdXLlMJfViBeOdsGebltfb4V", "e": null, "g": ["#84cc16", "#22c55e"]}, {"n": 46, "t": "로마제국흥망사 제15-16장", "a": "기번", "c": "제국은 왜 무너지는가", "k": "1qXvnunWN9ITQ4788h1vbmEJbamm8g1CC", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 47, "t": "카라마조프가의 형제들", "a": "도스토예프스키", "c": "신과 인간, 자유의지의 대서사", "k": "1JWuUjBpQN05EMQdBr4Gy5RxVtCKcN0Hm", "e": null, "g": ["#ec4899", "#f43f5e"]}, {"n": 48, "t": "정신분석의 기원과 발달", "a": "프로이트", "c": "무의식의 세계를 발견하다", "k": "1umWe0ZXCCSSeN-LsFFt1yUKE1basujyw", "e": "1BLacTXBTgPR3z6fCYujUXQA3Akl_rjqA", "g": ["#f59e0b", "#ef4444"]}, {"n": 49, "t": "논어 발췌", "a": "공자", "c": "배우고 익히면 즐겁지 아니한가", "k": "1CTqJ5yGN4bBfnZF43koM6fu6URH40R95", "e": "1rXZqvodZSkLBn1BZUWwhiGU4qc3w46nL", "g": ["#10b981", "#14b8a6"]}, {"n": 50, "t": "국가 제6-7부", "a": "플라톤", "c": "동굴의 비유와 이데아", "k": "17vCmqPoUa2U7QGZ5gVaUf8dhPxMw-xZs", "e": "1ZrrwnafAb8aR3PaHG28BOr__rGYq7q8U", "g": ["#3b82f6", "#6366f1"]}, {"n": 51, "t": "여인의 평화, 구름", "a": "아리스토파네스", "c": "전쟁과 평화를 향한 풍자", "k": null, "e": "1Nr5MDONby1vo0MnnwVUACkd0qvw_86Xj", "g": ["#8b5cf6", "#d946ef"]}, {"n": 52, "t": "시학", "a": "아리스토텔레스", "c": "비극은 카타르시스를 낳는다", "k": "1afyZ58iUKB4_BjVcJIwKfuja4NL4GgC3", "e": "1GvwBF8lbdamiyQq0oMWiZUTz9L3YWJtJ", "g": ["#0ea5e9", "#06b6d4"]}, {"n": 53, "t": "기하학 원론", "a": "유클리드", "c": "기하학의 영원한 공리", "k": "1Uwf0_ENvl6Jh_N6FKv8c7VjtLmrHKeR5", "e": "1FQKl7SuNvAosTcO05E3dyX-1Y-U1zuna", "g": ["#f97316", "#f59e0b"]}, {"n": 54, "t": "명상록", "a": "아우렐리우스", "c": "스스로에게 쓰는 성찰", "k": "17mgIfp4aaa51KY1HqjbDMO3FclvBbTEp", "e": "1QNJfObhmNWwFbYV338JQuoSnZubKQYDM", "g": ["#84cc16", "#22c55e"]}, {"n": 55, "t": "절대회의설 제1장", "a": "엠페이리코스", "c": "판단을 보류하라", "k": "16Tus33gSZpO78dvlbfwEnDTYN5rT5M7F", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 56, "t": "니벨룽겐의 노래", "a": "", "c": "영웅 지크프리트의 서사시", "k": "1h-nBJywHI6U95L7JwbpZ60z-DZKg_oGP", "e": "1JGfAeq89Z-x4ndXJ1ZVB7zRbBmOg0gMU", "g": ["#ec4899", "#f43f5e"]}, {"n": 57, "t": "신학대전 중 진실과 허위에 관하여 발췌", "a": "토마스 아퀴나스", "c": "진리와 허위에 관한 사색", "k": "1KCTNRivehXsB66eh21u39VLVlWDxN1hS", "e": "1pcEOYcDgIfqmuTT_Xe7C6jLr8RQGgF8V", "g": ["#f59e0b", "#ef4444"]}, {"n": 58, "t": "수상록 발췌", "a": "몽테뉴", "c": "나는 무엇을 아는가", "k": "1PoznG_YMMov7_tu7gtJm02I2jmx43AA9", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 59, "t": "템페스트", "a": "셰익스피어", "c": "용서와 화해의 마법", "k": "1HBzzPqV-9TzcKqFnZbxjYKjy-e6mHzRi", "e": "1_3TTOejVHUh5OEVvZUgR33ri1Q_rLYAw", "g": ["#3b82f6", "#6366f1"]}, {"n": 60, "t": "인간오성론", "a": "로크", "c": "경험이 지식의 원천이다", "k": "1pcXhpYpSEL0QmmVZ6KpGhjS6dv4846PR", "e": null, "g": ["#8b5cf6", "#d946ef"]}, {"n": 61, "t": "실락원", "a": "밀턴", "c": "실낙원, 인간의 타락과 구원", "k": "1F2Yud_zYXIPy9mJ0DVVvO-y2ENsUwqiP", "e": "1iohOx30knpgEBV6nESaV7vGs6XBGtrPK", "g": ["#0ea5e9", "#06b6d4"]}, {"n": 62, "t": "인간오성론", "a": "흄", "c": "인과율에 대한 회의", "k": "1A-2FGRV9eeDVZ1CEbIIAbVX3jCvYLH9-", "e": "13RjdMoLXCIPlpLrosCbun8QPbmYvAOH0", "g": ["#f97316", "#f59e0b"]}, {"n": 63, "t": "선악의 피안", "a": "니체", "c": "선악을 넘어선 새로운 가치", "k": "1EcgYYovCMKD0Y2a1tdeTrFFZdIZNQ4nm", "e": "1PEomkrSimhNWpKO6NKY3SaHmSwxkVhO1", "g": ["#84cc16", "#22c55e"]}, {"n": 64, "t": "프래그머티즘", "a": "제임스", "c": "진리는 유용함에 있다", "k": "1OKvVDUtaPRNKzW49LHyrI7xXADHENSC3", "e": "1kC52bIOq3u-iElh3QGGfCfjCmKaxNZ6_", "g": ["#6366f1", "#8b5cf6"]}, {"n": 65, "t": "메디아, 히폴리토스, 트로이아의 여자", "a": "유리피데스", "c": "정념이 부른 비극", "k": "1UK0fbnvICLCHkTpAvezqoLWxcC3HRP7K", "e": "1XbG1dnWc1dd6l-rYPgVaL-zDOHY4iTHG", "g": ["#ec4899", "#f43f5e"]}, {"n": 67, "t": "자연학 발췌", "a": "아리스토텔레스", "c": "자연을 탐구하는 철학", "k": "1Nzql403ugfZVLvk8eY9z79ZQbbawvC81", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 68, "t": "아이네이스", "a": "베르길리우스", "c": "로마 건국의 영웅 서사시", "k": "118qGuXRdb9zgR6nITS8Po8Jk8iPaoF6Z", "e": null, "g": ["#3b82f6", "#6366f1"]}, {"n": 69, "t": "조그만 꽃", "a": "프란체스코", "c": "가난 속에서 핀 성스러움", "k": "1Vhm-5Oq7vJ8rCmNhOgjODzcgjCww5xAe", "e": null, "g": ["#8b5cf6", "#d946ef"]}, {"n": 70, "t": "신학대전 중 인간론", "a": "아퀴나스", "c": "인간 본성에 대한 신학적 탐구", "k": "1fw-iPQIJa75fU845fQ09u5wexvN0A3yL", "e": null, "g": ["#0ea5e9", "#06b6d4"]}, {"n": 71, "t": "신곡 중 지옥편 연옥편", "a": "단테", "c": "지옥과 연옥을 지나는 순례", "k": "1vfw38XEBH6yqE2aP1s4D9cgB591L19_r", "e": null, "g": ["#f97316", "#f59e0b"]}, {"n": 72, "t": "신곡 중 천국편", "a": "단테", "c": "천국에서 마주한 신성한 빛", "k": "1qqj4Dy-moCmOCcDQfLAOJWELz7S7lzFW", "e": null, "g": ["#84cc16", "#22c55e"]}, {"n": 73, "t": "인간의 존엄에 대하여", "a": "미란돌라", "c": "인간은 스스로를 빚는 존재", "k": "1jqTvb2GIjsLyH1WjAwIZzm2dj3MIaRRw", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 74, "t": "인지원리론", "a": "버클리", "c": "존재하는 것은 지각되는 것", "k": "1lhZHMYx9cN07Bz53uZqJo6la7Nvsu20Z", "e": null, "g": ["#ec4899", "#f43f5e"]}, {"n": 75, "t": "프린키피아, 자연 철학의 수학적 원리", "a": "뉴턴", "c": "만유인력, 우주의 법칙", "k": "1KFfN9hp1xbx04JnVM5EEkJG4VoVx50US", "e": null, "g": ["#f59e0b", "#ef4444"]}, {"n": 76, "t": "존슨전 발췌", "a": "보스웰", "c": "한 위인의 생생한 초상", "k": "1af64Lug2Bn3jCF3fLdwlKD3HqvoZbH-1", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 77, "t": "프롤레고메나", "a": "칸트", "c": "형이상학은 어떻게 가능한가", "k": "1PSJP2Xg9F-ADeaP47APBHlD5k-l5wHVc", "e": null, "g": ["#3b82f6", "#6366f1"]}, {"n": 78, "t": "일기", "a": "울먼", "c": "노예제에 맞선 양심의 기록", "k": "1kElBMcMGNibyJfGuiyQJ40tCfynMOnQ2", "e": null, "g": ["#8b5cf6", "#d946ef"]}, {"n": 79, "t": "백경", "a": "멜빌", "c": "흰 고래를 쫓는 광기의 추적", "k": "1WR7E1D2WC7ikOds_FLEyA6mRRdikhWWG", "e": null, "g": ["#0ea5e9", "#06b6d4"]}, {"n": 80, "t": "상대성원리, 특수이론 및 일반이론", "a": "아인슈타인", "c": "시간과 공간은 상대적이다", "k": "1DU54JxlPyqke3mOx1XIPE85ZF_MA5Rx5", "e": null, "g": ["#f97316", "#f59e0b"]}, {"n": 81, "t": "사슬에 묶인 프로메테우스", "a": "아이스킬로스", "c": "인류에게 불을 가져다준 죄", "k": "1a8S_GLxvfWVqPzSGsalLO8cSUKM_kvFA", "e": null, "g": ["#84cc16", "#22c55e"]}, {"n": 82, "t": "파이드로스", "a": "플라톤", "c": "사랑과 영혼, 그리고 수사학", "k": "1cAwui4TvHU4b3uK87EGrDNjNIkQoTwvW", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 83, "t": "형이상학 제7장", "a": "아리스토텔레스", "c": "존재란 무엇인가", "k": "1xY5B3POvQeSs4q2FFeU4jt0xeBPsiGKF", "e": null, "g": ["#ec4899", "#f43f5e"]}, {"n": 84, "t": "숭고성에 대하여", "a": "롱기누스", "c": "위대한 문장의 조건", "k": "18zSXQKmq-jLbcX_jt4MZTMJ2IoZ3aF1U", "e": null, "g": ["#f59e0b", "#ef4444"]}, {"n": 85, "t": "자연과 성총에 대하여", "a": "아우구스티누스", "c": "은총과 자유의지", "k": "1VM4pspIHYMv_d0hUlvjwIgtkkarl99V1", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 86, "t": "신학대전 중 신에 대하여", "a": "토마스 아퀴나스", "c": "신의 존재를 증명하다", "k": "1ZlPLaEfU2OwIwBcCgPrsD003ahkoqcdD", "e": null, "g": ["#3b82f6", "#6366f1"]}, {"n": 87, "t": "캔터베리 이야기", "a": "초서", "c": "순례길에서 펼쳐지는 이야기", "k": "1adpfb1oo23ccOqZezu_5BafmeFWPApRH", "e": null, "g": ["#8b5cf6", "#d946ef"]}, {"n": 88, "t": "리차드 2세", "a": "셰익스피어", "c": "왕관을 잃은 왕의 비극", "k": "1TbijKS5ebU0tiKAALjJ_lkydiFL8d8xP", "e": null, "g": ["#0ea5e9", "#06b6d4"]}, {"n": 89, "t": "돈키호테 제1부", "a": "세르반테스", "c": "이상을 좇는 기사의 모험", "k": "1Kczao9vHmiTRloVxMRnfJVqRi26fKsH7", "e": null, "g": ["#f97316", "#f59e0b"]}, {"n": 90, "t": "에티카 제1부", "a": "스피노자", "c": "신은 곧 자연이다", "k": "1lSc5YM1Rc4yVNjavL_xCszlnuzv04-u2", "e": null, "g": ["#84cc16", "#22c55e"]}, {"n": 91, "t": "자연 종교에 대하여", "a": "흄", "c": "자연 종교에 대한 대화", "k": "1tH-z3p_Jrbq6llhHHG-miTvvhRmqHZeB", "e": null, "g": ["#6366f1", "#8b5cf6"]}, {"n": 92, "t": "철학사전 발췌", "a": "볼테르", "c": "관용을 위한 철학적 사전", "k": "1OlMqNEMizcSs78xfpA3Cj455m47Qi3Gz", "e": null, "g": ["#ec4899", "#f43f5e"]}, {"n": 93, "t": "역사철학 발췌", "a": "헤겔", "c": "역사는 자유의 실현 과정", "k": "1a2ztwiRsG47tREGpuVEU21ZX3p_2FAMX", "e": null, "g": ["#f59e0b", "#ef4444"]}, {"n": 94, "t": "종의 기원 발췌", "a": "다윈", "c": "자연선택과 종의 진화", "k": "1-J--3fdN0B66YhsSQ3wmWm9pI9D0Z7Ym", "e": null, "g": ["#10b981", "#14b8a6"]}, {"n": 95, "t": "빌리 버드", "a": "멜빌", "c": "순수한 영혼의 비극", "k": "1frIgjhkqSg1HBkZD1dPEw7erbR9kz7yQ", "e": null, "g": ["#3b82f6", "#6366f1"]}, {"n": 96, "t": "나사의 회전", "a": "제임스", "c": "유령인가 광기인가", "k": "1Ny5Th9FBXJ304If4Unj-4navWt9PsW0-", "e": null, "g": ["#8b5cf6", "#d946ef"]}, {"n": 97, "t": "고르기아스", "a": "플라톤", "c": "수사학과 정의를 논하다", "k": "1oY_UmvGA9kCSqE1tcbliJ5w-Z_82yQ4Y", "e": null, "g": ["#0ea5e9", "#06b6d4"]}, {"n": 98, "t": "영혼에 대하여", "a": "아리스토텔레스", "c": "영혼의 본질을 탐구하다", "k": "1bMi8MUmT5fXDNG1BXjUKTZr1z1hRMEl7", "e": null, "g": ["#f97316", "#f59e0b"]}, {"n": 99, "t": "바가바드 기타", "a": "마하바라타", "c": "행위의 길, 헌신의 가르침", "k": "1wTnR8szuWgT5MIIEe9ss7hnNY0qkE2MW", "e": null, "g": ["#84cc16", "#22c55e"]}, {"n": 100, "t": "철학의 위안", "a": "보에티우스", "c": "운명의 수레바퀴 앞에서", "k": "1Pg9V7-tXcxYuCqqPdoVjnqTuWcOGsALs", "e": null, "g": ["#6366f1", "#8b5cf6"]}];
+
+/* ---------- Drive 링크 → 스트리밍 URL ---------- */
+function streamURL(id){ return id ? 'https://drive.google.com/uc?export=download&id='+id : null; }
+
+/* ---------- 상태 ---------- */
+let idx = 0;
+const track = document.getElementById('track');
+const N = BOOKS.length;
+
+/* ---------- 카드 렌더 ---------- */
+const cards = BOOKS.map((b,i)=>{
+  const el = document.createElement('div');
+  el.className='card';
+  el.style.setProperty('--g1',b.g[0]);
+  el.style.setProperty('--g2',b.g[1]);
+  const langs = [];
+  if(b.k) langs.push('한'); langs.push('中'); if(b.e) langs.push('EN');
+  el.innerHTML = `
+    <div class="skin">
+      <div class="lang-dots">${langs.map(l=>'<span>'+l+'</span>').join('')}</div>
+      <div class="no">No. ${String(b.n).padStart(2,'0')}</div>
+      <div class="ttl">${b.t}</div>
+      <div class="auth">${b.a||'작자 미상'}</div>
+      <div class="copy">"${b.c}"</div>
+    </div>`;
+  el.addEventListener('click',()=>{ if(i===idx) openPlayer(); else { idx=i; layout(); } });
+  track.appendChild(el);
+  return el;
+});
+
+/* ---------- 캐러셀 레이아웃 (넷플릭스식 겹침) ---------- */
+function layout(){
+  cards.forEach((el,i)=>{
+    let d = i - idx;
+    // 순환 보정
+    if(d > N/2) d -= N; if(d < -N/2) d += N;
+    const ad = Math.abs(d);
+    if(ad>3){ el.style.opacity=0; el.style.pointerEvents='none';
+      el.style.transform='translate(-50%,-50%) scale(.6)'; return; }
+    el.style.pointerEvents='auto';
+    const x = d * 86;                       // 좌우 겹침 간격
+    const scale = d===0 ? 1 : 0.82 - (ad-1)*0.07;
+    const rotY = d===0 ? 0 : (d<0? 26 : -26);
+    const tz = -ad*120;
+    const op = d===0 ? 1 : 0.92 - (ad-1)*0.16;
+    el.style.zIndex = 100 - ad;
+    el.style.opacity = op;
+    el.style.filter = d===0 ? 'none' : 'brightness(.6) saturate(.85)';
+    el.style.transform = `translate(-50%,-50%) translateX(${x}px) translateZ(${tz}px) rotateY(${rotY}deg) scale(${scale})`;
+  });
+  const b = BOOKS[idx];
+  document.getElementById('counter').innerHTML = `<b>${String(b.n).padStart(2,'0')}</b> &nbsp;/&nbsp; ${N}`;
+}
+layout();
+
+/* ---------- 네비게이션 ---------- */
+function go(dir){ idx = (idx+dir+N)%N; layout(); }
+document.getElementById('next').onclick=()=>go(1);
+document.getElementById('prev').onclick=()=>go(-1);
+document.getElementById('open').onclick=openPlayer;
+
+/* 스와이프 */
+let sx=0,sy=0,sw=false;
+track.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;sw=true},{passive:true});
+track.addEventListener('touchend',e=>{
+  if(!sw)return; sw=false;
+  const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)) go(dx<0?1:-1);
+});
+// 데스크탑 휠/키
+window.addEventListener('keydown',e=>{
+  if(document.getElementById('player').classList.contains('on'))return;
+  if(e.key==='ArrowRight')go(1); if(e.key==='ArrowLeft')go(-1); if(e.key==='Enter')openPlayer();
+});
+let wlock=false;
+window.addEventListener('wheel',e=>{
+  if(document.getElementById('searchPanel').classList.contains('on'))return;
+  if(wlock)return; wlock=true; setTimeout(()=>wlock=false,260);
+  go(e.deltaY>0||e.deltaX>0?1:-1);
+},{passive:true});
+
+/* ---------- 플레이어 ---------- */
+const audio=document.getElementById('audio');
+const player=document.getElementById('player');
+let curBook=null, curLang=null;
+
+function openPlayer(){
+  const b=BOOKS[idx]; curBook=b;
+  document.getElementById('pNo').textContent='No. '+String(b.n).padStart(2,'0');
+  document.getElementById('pTitle').textContent=b.t;
+  document.getElementById('pAuthor').textContent=b.a||'작자 미상';
+  document.getElementById('pcNo').textContent=String(b.n).padStart(2,'0');
+  document.getElementById('pCopy').textContent='"'+b.c+'"';
+  document.getElementById('pCover').style.background='linear-gradient(150deg,'+b.g[0]+','+b.g[1]+')';
+
+  // 언어 버튼: 한국어 / 중국어 / 영어
+  const avail = { ko:b.k, zh:null, en:b.e };  // 중국어는 데이터에 없음 → 준비중
+  const defs=[['ko','🇰🇷','한국어'],['zh','🇨🇳','中文'],['en','🇬🇧','English']];
+  const row=document.getElementById('langRow'); row.innerHTML='';
+  defs.forEach(([code,flag,name])=>{
+    const has=!!avail[code];
+    const btn=document.createElement('div');
+    btn.className='langBtn'+(has?'':' off');
+    btn.innerHTML='<div class="lg-f">'+flag+'</div><div class="lg-n">'+name+'</div>';
+    if(has) btn.onclick=()=>selectLang(code,avail[code],btn);
+    row.appendChild(btn);
+  });
+  // 기본: 한국어 우선, 없으면 영어
+  audio.removeAttribute('src'); audio.load();
+  driveFrame.src='about:blank'; driveFrame.classList.remove('show'); audio.classList.remove('show');
+  document.getElementById('loadMsg').innerHTML='';
+  const first = b.k ? ['ko',b.k] : (b.e?['en',b.e]:null);
+  if(first){ const fb=row.children[first[0]==='ko'?0:2]; selectLang(first[0],first[1],fb); }
+  player.classList.add('on');
+}
+
+const driveFrame=document.getElementById('driveFrame');
+const playState=document.getElementById('playState');
+let failTimer=null;
+
+function selectLang(code,id,btn){
+  [...document.getElementById('langRow').children].forEach(c=>c.classList.remove('sel'));
+  btn.classList.add('sel'); curLang=code;
+
+  // 초기화
+  clearTimeout(failTimer);
+  audio.classList.remove('show'); driveFrame.classList.remove('show');
+  driveFrame.src='about:blank';
+  playState.className='playState loading';
+  playState.textContent='⟳ 오디오를 불러오는 중…';
+
+  // 1차: 브라우저 audio 직접 재생 시도
+  const url=streamURL(id);
+  audio.src=url;
+  audio.load();
+
+  // audio가 메타데이터를 읽으면 성공 → audio 노출
+  let settled=false;
+  function ok(){
+    if(settled)return; settled=true; clearTimeout(failTimer);
+    audio.classList.add('show');
+    playState.className='playState';
+    playState.textContent='▶ 재생 버튼을 누르세요';
+    audio.play().catch(()=>{});
+  }
+  function fallback(){
+    if(settled)return; settled=true;
+    // 2차: Google Drive 미리보기 플레이어 iframe
+    audio.classList.remove('show');
+    driveFrame.src='https://drive.google.com/file/d/'+id+'/preview';
+    driveFrame.classList.add('show');
+    playState.className='playState';
+    playState.textContent='아래 플레이어의 ▶ 버튼으로 들어보세요';
+  }
+  audio.addEventListener('loadedmetadata',ok,{once:true});
+  audio.addEventListener('canplay',ok,{once:true});
+  audio.addEventListener('error',fallback,{once:true});
+  // 4.5초 안에 audio가 안 열리면 iframe으로 폴백
+  failTimer=setTimeout(fallback,4500);
+
+  document.getElementById('loadMsg').innerHTML=
+    '소리가 안 들리면 <a href="https://drive.google.com/file/d/'+id+'/view" target="_blank">새 창에서 듣기</a>';
+}
+
+document.getElementById('pClose').onclick=closePlayer;
+document.getElementById('scrim').onclick=closePlayer;
+function closePlayer(){ audio.pause(); driveFrame.src='about:blank'; clearTimeout(failTimer); player.classList.remove('on'); }
+
+/* ---------- 검색 ---------- */
+const sPanel=document.getElementById('searchPanel'), sList=document.getElementById('searchList');
+function renderList(q=''){
+  q=q.trim().toLowerCase();
+  const items=BOOKS.filter(b=>!q||b.t.toLowerCase().includes(q)||(b.a||'').toLowerCase().includes(q));
+  sList.innerHTML=items.map(b=>{
+    const i=BOOKS.indexOf(b);
+    return '<div class="sItem" data-i="'+i+'"><div class="sn">'+String(b.n).padStart(2,'0')+
+      '</div><div><div class="si-t">'+b.t+'</div><div class="si-a">'+(b.a||'작자 미상')+'</div></div></div>';
+  }).join('')||'<div style="color:var(--ink-dim);padding:30px;text-align:center">검색 결과가 없습니다</div>';
+  [...sList.children].forEach(el=>{
+    if(el.dataset.i!==undefined) el.onclick=()=>{ idx=+el.dataset.i; layout(); sPanel.classList.remove('on'); openPlayer(); };
+  });
+}
+document.getElementById('searchBtn').onclick=()=>{ sPanel.classList.add('on'); renderList(); document.getElementById('searchInput').focus(); };
+document.getElementById('sClose').onclick=()=>sPanel.classList.remove('on');
+document.getElementById('searchInput').oninput=e=>renderList(e.target.value);
+</script>
+</body>
+</html>
