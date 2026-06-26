@@ -224,7 +224,7 @@ footer .ft-line{font-family:'Cormorant Garamond',serif;font-style:italic;font-si
   <div class="lb-counter" id="lbCounter"></div>
   <div class="lb-nav lb-prev" id="lbPrev">‹</div>
   <div class="lb-nav lb-next" id="lbNext">›</div>
-  <div class="lb-wrap"><img id="lightboxImg" src=""><button class="lb-dl" id="lbDownload">⬇️ 사진 저장</button><div class="lb-dlcount" id="lbDlCount"></div></div>
+  <div class="lb-wrap"><img id="lightboxImg" src=""><button class="lb-dl" id="lbDownload">♡ 좋아요</button><div class="lb-dlcount" id="lbDlCount"></div></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -473,6 +473,7 @@ function fmtTime(ts){if(!ts)return'';const d=new Date(ts);const mm=String(d.getM
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
 const ROOM_PHOTOS={};
 const DL_COUNTS={};   // url -> count 캐시
+const LIKED_PHOTOS={}; // url -> 내가 좋아요 눌렀는지 (이 기기 기준)
 
 // Storage URL에서 '파일 경로' 부분만 뽑아 안정적인 키 생성
 // (뒤에 붙는 ?alt=media&token=... 은 매번 달라지므로 제외해야 함)
@@ -503,28 +504,28 @@ function watchDownloadCount(url){
     const n = snap.val() || 0;
     DL_COUNTS[url]=n;
     const badge=document.getElementById('badge-'+key);
-    if(badge) badge.textContent='⬇️ '+n;
+    if(badge) badge.textContent='♥ '+n;
     // 라이트박스에 현재 보고있는 사진이면 갱신
     if(currentPhotoUrl===url){
       const el=document.getElementById('lbDlCount');
-      if(el) el.innerHTML='지금까지 <b>'+n+'</b>번 저장됨';
+      if(el) el.innerHTML='♥ 좋아요 <b>'+n+'</b>';
     }
   });
 }
 
-// 다운로드 횟수 1 증가 — 현재값을 한 번 읽고 +1 저장 (모바일에서 확실)
-function bumpDownloadCount(url){
-  if(!fbReady||!db){ console.warn('Firebase 미연결: 카운트 불가'); return; }
+// 좋아요 수 변경 (+1 또는 -1)
+function changeLikeCount(url, delta){
+  if(!fbReady||!db){ console.warn('Firebase 미연결'); return; }
   const key=dlKey(url);
   const ref=db.ref(DBROOT+'_downloads/'+key);
   ref.once('value').then(snap=>{
-    const cur = snap.val() || 0;
-    return ref.set(cur + 1);
-  }).then(()=>{
-    console.log('카운트 +1 완료:', key);
+    let cur = snap.val() || 0;
+    cur = cur + delta;
+    if(cur < 0) cur = 0;
+    return ref.set(cur);
   }).catch(err=>{
-    console.error('카운트 저장 실패:', err);
-    toast('카운트 저장 중 오류가 났어요');
+    console.error('좋아요 저장 실패:', err);
+    toast('좋아요 저장 중 오류가 났어요');
   });
 }
 let currentPhotoUrl=null;
@@ -550,7 +551,8 @@ function showLbPhoto(){
   // 다운로드 횟수 표시
   const dlEl=document.getElementById('lbDlCount');
   const n = DL_COUNTS[currentPhotoUrl] || 0;
-  dlEl.innerHTML = '지금까지 <b>'+n+'</b>번 저장됨';
+  dlEl.innerHTML = '♥ 좋아요 <b>'+n+'</b>';
+  updateLikeButton(currentPhotoUrl);
   // 화살표 표시/숨김 (사진 1장이면 숨김)
   const prev=document.getElementById('lbPrev'), next=document.getElementById('lbNext');
   if(lbList.length>1){ prev.classList.remove('hide'); next.classList.remove('hide'); }
@@ -598,41 +600,34 @@ document.addEventListener('keydown',e=>{
     }
   },{passive:true});
 })();
-document.getElementById('lbDownload').addEventListener('click', async (e)=>{
+document.getElementById('lbDownload').addEventListener('click', (e)=>{
   e.stopPropagation();
   if(!currentPhotoUrl)return;
-  const btn=e.currentTarget;
-  const orig=btn.innerHTML;
   const urlNow=currentPhotoUrl;
-
-  // 1) 버튼 누르는 즉시 카운트 +1 (무조건)
-  bumpDownloadCount(urlNow);
-
-  // 2) 다운로드 시도
-  btn.disabled=true; btn.innerHTML='<span class="uploading"></span>저장 중...';
-  try{
-    // Storage 다운로드 URL에 다운로드 강제 파라미터가 이미 포함됨. 직접 fetch 시도.
-    const res=await fetch(urlNow,{mode:'cors'});
-    if(!res.ok) throw new Error('fetch 실패 '+res.status);
-    const blob=await res.blob();
-    const objUrl=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=objUrl;
-    a.download='블루문여행_'+Date.now()+'.jpg';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(objUrl);
-    btn.innerHTML='✅ 저장됨';
-    setTimeout(()=>{btn.disabled=false;btn.innerHTML=orig;},1500);
-  }catch(err){
-    console.error('직접 저장 불가(CORS), 새 탭 안내:', err);
-    // 모바일에서 가장 잘 되는 방법: 새 탭에서 열고 길게 눌러 저장
-    btn.innerHTML='✅ 새 탭에서 길게 눌러 저장';
-    window.open(urlNow,'_blank');
-    setTimeout(()=>{btn.disabled=false;btn.innerHTML=orig;},2200);
+  const liked = LIKED_PHOTOS[urlNow];
+  if(liked){
+    // 좋아요 취소
+    changeLikeCount(urlNow, -1);
+    LIKED_PHOTOS[urlNow]=false;
+  }else{
+    // 좋아요
+    changeLikeCount(urlNow, +1);
+    LIKED_PHOTOS[urlNow]=true;
   }
+  updateLikeButton(urlNow);
 });
+
+// 좋아요 버튼 모양 갱신 (꽉 찬 하트 / 빈 하트)
+function updateLikeButton(url){
+  const btn=document.getElementById('lbDownload');
+  if(LIKED_PHOTOS[url]){
+    btn.innerHTML='♥ 좋아요';
+    btn.style.background='linear-gradient(135deg,#e8758a,#e89b7a)';
+  }else{
+    btn.innerHTML='♡ 좋아요';
+    btn.style.background='';
+  }
+}
 
 function observeRooms(){
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.12});
