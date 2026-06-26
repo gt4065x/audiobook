@@ -474,16 +474,25 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
 const ROOM_PHOTOS={};
 const DL_COUNTS={};   // url -> count 캐시
 
-// Storage URL을 Firebase 키로 안전하게 변환 (.#$[] 등 금지문자 제거)
+// Storage URL에서 '파일 경로' 부분만 뽑아 안정적인 키 생성
+// (뒤에 붙는 ?alt=media&token=... 은 매번 달라지므로 제외해야 함)
 function dlKey(url){
+  let core = url;
+  // 1) 쿼리스트링(?이후) 제거 — 토큰 등 가변 부분 버림
+  const q = core.indexOf('?');
+  if(q !== -1) core = core.slice(0, q);
+  // 2) '/o/' 뒤가 실제 파일 경로(고유). 있으면 그 부분만 사용
+  const marker = '/o/';
+  const mi = core.indexOf(marker);
+  if(mi !== -1) core = core.slice(mi + marker.length);
+  // 3) Firebase 키 금지문자(. # $ [ ] /)를 _로 치환
   let s='';
-  for(let i=0;i<url.length;i++){
-    const c=url.charCodeAt(i);
-    if((c>=48&&c<=57)||(c>=65&&c<=90)||(c>=97&&c<=122)) s+=url[i];
+  for(let i=0;i<core.length;i++){
+    const c=core.charCodeAt(i);
+    if((c>=48&&c<=57)||(c>=65&&c<=90)||(c>=97&&c<=122)) s+=core[i];
     else s+='_';
   }
-  // 너무 길면 뒷부분만 (Storage 경로의 고유 부분이 뒤쪽)
-  return s.slice(-120);
+  return s.slice(-150);
 }
 
 // 다운로드 횟수 실시간 감시
@@ -503,11 +512,20 @@ function watchDownloadCount(url){
   });
 }
 
-// 다운로드 횟수 1 증가 (트랜잭션으로 안전하게)
+// 다운로드 횟수 1 증가 — 현재값을 한 번 읽고 +1 저장 (모바일에서 확실)
 function bumpDownloadCount(url){
-  if(!fbReady||!db) return;
+  if(!fbReady||!db){ console.warn('Firebase 미연결: 카운트 불가'); return; }
   const key=dlKey(url);
-  db.ref(DBROOT+'_downloads/'+key).transaction(cur => (cur||0)+1);
+  const ref=db.ref(DBROOT+'_downloads/'+key);
+  ref.once('value').then(snap=>{
+    const cur = snap.val() || 0;
+    return ref.set(cur + 1);
+  }).then(()=>{
+    console.log('카운트 +1 완료:', key);
+  }).catch(err=>{
+    console.error('카운트 저장 실패:', err);
+    toast('카운트 저장 중 오류가 났어요');
+  });
 }
 let currentPhotoUrl=null;
 let lbList=[];      // 현재 방의 사진 url 배열
@@ -585,27 +603,34 @@ document.getElementById('lbDownload').addEventListener('click', async (e)=>{
   if(!currentPhotoUrl)return;
   const btn=e.currentTarget;
   const orig=btn.innerHTML;
+  const urlNow=currentPhotoUrl;
+
+  // 1) 버튼 누르는 즉시 카운트 +1 (무조건)
+  bumpDownloadCount(urlNow);
+
+  // 2) 다운로드 시도
   btn.disabled=true; btn.innerHTML='<span class="uploading"></span>저장 중...';
   try{
-    const res=await fetch(currentPhotoUrl);
+    // Storage 다운로드 URL에 다운로드 강제 파라미터가 이미 포함됨. 직접 fetch 시도.
+    const res=await fetch(urlNow,{mode:'cors'});
+    if(!res.ok) throw new Error('fetch 실패 '+res.status);
     const blob=await res.blob();
-    const url=URL.createObjectURL(blob);
+    const objUrl=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url;
+    a.href=objUrl;
     a.download='블루문여행_'+Date.now()+'.jpg';
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
-    bumpDownloadCount(currentPhotoUrl);
+    URL.revokeObjectURL(objUrl);
     btn.innerHTML='✅ 저장됨';
     setTimeout(()=>{btn.disabled=false;btn.innerHTML=orig;},1500);
   }catch(err){
-    console.error(err);
-    // fallback: 새 탭으로 열기 (길게 눌러 저장)
-    window.open(currentPhotoUrl,'_blank');
-    btn.disabled=false; btn.innerHTML=orig;
-    toast('새 탭에서 사진을 길게 눌러 저장하세요');
+    console.error('직접 저장 불가(CORS), 새 탭 안내:', err);
+    // 모바일에서 가장 잘 되는 방법: 새 탭에서 열고 길게 눌러 저장
+    btn.innerHTML='✅ 새 탭에서 길게 눌러 저장';
+    window.open(urlNow,'_blank');
+    setTimeout(()=>{btn.disabled=false;btn.innerHTML=orig;},2200);
   }
 });
 
