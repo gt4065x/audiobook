@@ -416,7 +416,7 @@ function fillNames(){
 }
 
 document.getElementById('photoInput').addEventListener('change', e=>{
-  pickedFiles = Array.from(e.target.files).slice(0,6);
+  pickedFiles = Array.from(e.target.files).slice(0,20);
   const tr=document.getElementById('thumbRow'); tr.innerHTML='';
   pickedFiles.forEach(f=>{
     const url=URL.createObjectURL(f);
@@ -436,12 +436,16 @@ document.getElementById('btnSubmit').addEventListener('click', async ()=>{
   btn.disabled=true; btn.innerHTML='<span class="uploading"></span>올리는 중...';
   try{
     let urls=[];
+    let done=0;
+    const total=pickedFiles.length;
     for(const f of pickedFiles){
       const comp = await compress(f);
       const path = DBROOT+'/'+currentRoom+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,7)+'.jpg';
       const ref = storage.ref().child(path);
       await ref.put(comp);
       urls.push(await ref.getDownloadURL());
+      done++;
+      if(total>1){ btn.innerHTML='<span class="uploading"></span>사진 '+done+'/'+total+'장...'; }
     }
     await db.ref(DBROOT+"/"+currentRoom).push({
       name:name, text:text, photos:urls.length?urls:null, ts:firebase.database.ServerValue.TIMESTAMP
